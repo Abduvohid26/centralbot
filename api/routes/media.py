@@ -11,7 +11,7 @@ from bot.loader import bot
 from bot.utils.database.functions.f_dbbot import get_random_bot_username
 from bot.utils.database.functions.f_media import get_media_by_link
 from bot.utils.database.functions.f_stat_link import detect_social_network, increment_social_network_stat
-from bot.utils.database.functions.f_userbot import  get_all_user_bots
+from bot.utils.database.functions.f_userbot import  get_all_user_bots, get_random_active_userbot
 
 router = APIRouter()
 
