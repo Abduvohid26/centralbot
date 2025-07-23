@@ -3,11 +3,12 @@
 from telethon import TelegramClient, events
 import asyncio
 from telethon.sessions import StringSession
-from aiogram import Bot
-
+from loader import bot
+import random
 api_id = 22209167
 api_hash = "77603dcd30196b60487d2a6f7acb4702"
-bot_username = 'tarjimontgbot'
+usernames = ['tarjimontgbot', '@Quronallbot', '@Mediabaza04bot', '@Mediabaza05bot', '@Mediabaza09bot', '@Mediabaza10bot', '@Mediabaza10bot', '@Mediabaza14bot']
+bot_username = random.choice(usernames)
 
 
 from telethon import TelegramClient, events
@@ -16,25 +17,25 @@ import os
 import httpx
 
 
-# async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict:
-#     url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
-#     async with httpx.AsyncClient() as client:
-#         with open(file_path, 'rb') as audio_file:
-#             files = {'audio': (file_path, audio_file)}
-#             data = {'chat_id': chat_id, 'caption': caption}
-#             response = await client.post(url, data=data, files=files)
-#             response.raise_for_status()
-#             result = response.json()
-#             print(result, "✅ Telegram javobi")
-#             file_id = result['result']['audio']['file_id']
-#             message_id = result['result']['message_id']
-#             return {
-#                 "file_id": file_id,
-#                 "message_id": message_id
-#             }
+async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict:
+    url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
+    async with httpx.AsyncClient() as client:
+        with open(file_path, 'rb') as audio_file:
+            files = {'audio': (file_path, audio_file)}
+            data = {'chat_id': chat_id, 'caption': caption}
+            response = await client.post(url, data=data, files=files)
+            response.raise_for_status()
+            result = response.json()
+            print(result, "✅ Telegram javobi")
+            file_id = result['result']['audio']['file_id']
+            message_id = result['result']['message_id']
+            return {
+                "file_id": file_id,
+                "message_id": message_id
+            }
 from bot.utils.database.functions.f_userbot import  get_random_active_userbot
 from telethon.sessions import StringSession
-from aiogram import types
+
 
 async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | None:
 
@@ -85,16 +86,10 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
                 print(f"💾 Yuklandi: {file_path}")
 
                 # Telegramga yuboramiz
-                # result = await send_audio_to_chat(
-                #     file_path=file_path,
-                #     chat_id=chat_id,
-                #     bot_token=bot_token,
-                #     caption=prompt
-                # )
-                bot = Bot(bot_token)
-                result = await bot.send_audio(
+                result = await send_audio_to_chat(
+                    file_path=file_path,
                     chat_id=chat_id,
-                    audio=types.FSInputFile(file_path),
+                    bot_token=bot_token,
                     caption=prompt
                 )
 
