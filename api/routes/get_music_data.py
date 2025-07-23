@@ -3,7 +3,6 @@
 from telethon import TelegramClient, events
 import asyncio
 from telethon.sessions import StringSession
-from loader import bot
 import random
 api_id = 22209167
 api_hash = "77603dcd30196b60487d2a6f7acb4702"
