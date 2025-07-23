@@ -183,7 +183,7 @@ async def receive_audio_text(data: AudioTextRequest):
 
 from api.routes.get_music_data import get_music_data
 
-@router.post("/find-music")
+@router.get("/find-music")
 async def muz_router(prompt: str, bot_token: str, chat_id: int):
     try:
         file_id = await get_music_data(prompt, bot_token, chat_id)  # 🔁 Endi file_id olish mumkin
