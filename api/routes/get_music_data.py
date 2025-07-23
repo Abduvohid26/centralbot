@@ -34,7 +34,7 @@ import httpx
 #             }
 from bot.utils.database.functions.f_userbot import  get_random_active_userbot
 from telethon.sessions import StringSession
-from aiogram.types import FSInputFile
+from aiogram import types
 
 async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | None:
 
@@ -93,7 +93,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
                 # )
                 result = await bot.send_audio(
                     chat_id=chat_id,
-                    audio=FsInputFile(file_path),
+                    audio=types.input_file.FsInputFile(file_path),
                     caption=prompt
                 )
 
