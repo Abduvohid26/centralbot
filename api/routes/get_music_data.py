@@ -3,7 +3,7 @@
 from telethon import TelegramClient, events
 import asyncio
 from telethon.sessions import StringSession
-from bot.loader import bot
+from aiogram import Bot
 
 api_id = 22209167
 api_hash = "77603dcd30196b60487d2a6f7acb4702"
@@ -91,6 +91,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
                 #     bot_token=bot_token,
                 #     caption=prompt
                 # )
+                bot = Bot(bot_token)
                 result = await bot.send_audio(
                     chat_id=chat_id,
                     audio=types.FSInputFile(file_path),
