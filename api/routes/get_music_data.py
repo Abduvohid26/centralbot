@@ -34,7 +34,7 @@ async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, capti
             }
 from bot.utils.database.functions.f_userbot import  get_random_active_userbot
 from telethon.sessions import StringSession
-
+import asyncio
 
 async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | None:
 
@@ -70,6 +70,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
 
     @client.on(events.NewMessage(from_users=bot_username))
     async def handle_audio(event):
+        await asyncio.sleep(0.5)
         nonlocal audio_received, file_id, message_id
         if audio_received:
             return
