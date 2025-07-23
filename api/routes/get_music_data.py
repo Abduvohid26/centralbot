@@ -93,7 +93,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
                 # )
                 result = await bot.send_audio(
                     chat_id=chat_id,
-                    audio=types.input_file.FsInputFile(file_path),
+                    audio=types.FsInputFile(file_path),
                     caption=prompt
                 )
 
