@@ -107,6 +107,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
             except Exception as e:
                 print(f"❌ Xatolik: {e}")
             finally:
+                os.remove(file_path)
                 await client.disconnect()
 
 
