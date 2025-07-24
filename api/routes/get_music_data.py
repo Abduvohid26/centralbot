@@ -81,7 +81,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
             print("🎧 Audio topildi, yuklanmoqda...")
 
             # Fayl hajmi tekshiruv (masalan: 5 sekundli demo mp3)
-            if file.size and file.size < 50 * 1024:  # 50KB dan kichik faylni tashlab yuboramiz
+            if file.size and file.size < 100 * 1024:  # 100KB dan kichik faylni tashlab yuboramiz
                 print("⚠️ Fayl juda kichik, ehtimol 5 sekundli demo. Tashlab yuborildi.")
                 await client.disconnect()
                 return
