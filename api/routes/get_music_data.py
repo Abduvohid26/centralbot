@@ -9,6 +9,7 @@ api_hash = "77603dcd30196b60487d2a6f7acb4702"
 usernames = ['tarjimontgbot', '@Quronallbot', '@Mediabaza04bot', '@Mediabaza05bot', '@Mediabaza09bot', '@Mediabaza10bot', '@Mediabaza10bot', '@Mediabaza14bot']
 bot_username = random.choice(usernames)
 
+from bot.utils.database.functions.f_userbot import get_random_active_userbot
 
 from telethon import TelegramClient, events
 import os
