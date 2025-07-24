@@ -17,21 +17,32 @@ import os
 import httpx
 
 
-async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict:
+async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict | None:
     url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
-    async with httpx.AsyncClient() as client:
-        with open(file_path, 'rb') as audio_file:
-            files = {'audio': (os.path.basename(file_path), audio_file, 'audio/mpeg')}
-            data = {'chat_id': chat_id, 'caption': caption}
-            response = await client.post(url, data=data, files=files)
+    timeout = httpx.Timeout(10.0)  # ⏰ 10 soniyadan oshmasligi shart
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            with open(file_path, 'rb') as audio_file:
+                files = {'audio': (os.path.basename(file_path), audio_file, 'audio/mpeg')}
+                data = {'chat_id': chat_id, 'caption': caption}
+                response = await client.post(url, data=data, files=files)
+
             response.raise_for_status()
             result = response.json()
             print(result, "✅ Telegram javobi")
+
             return {
                 "file_id": result['result']['audio']['file_id'],
                 "message_id": result['result']['message_id']
             }
 
+    except httpx.HTTPError as e:
+        print(f"❌ HTTP xatolik: {e}")
+    except Exception as e:
+        print(f"❌ Umumiy xatolik: {e}")
+
+    return None  # 🎯 Timeout yoki xatolik bo‘lsa None qaytadi
 async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int = 12) -> dict | None:
     userbot = await get_random_active_userbot()
 
@@ -95,6 +106,11 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int
             print(f"💾 Yuklandi: {audio_path}")
 
             result = await send_audio_to_chat(audio_path, chat_id, bot_token, caption=prompt)
+            if result is None:
+                print("❌ Audio yuborishda xatolik timeout")
+                await cleanup()
+                audio_ready.set()
+                return
             file_id = result['file_id']
             message_id = result['message_id']
             print("✅ Telegramga yuborildi")
