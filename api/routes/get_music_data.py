@@ -15,11 +15,12 @@ from telethon import TelegramClient, events
 import os
 
 import httpx
+TEMP_DIR = "/tmp"
 
 
 async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict | None:
     url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
-    timeout = httpx.Timeout(15.0)  # ⏰ 10 soniyadan oshmasligi shart
+    timeout = httpx.Timeout(connect=5.0, read=60.0, write=60.0, pool=5.0)
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -37,13 +38,12 @@ async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, capti
                 "message_id": result['result']['message_id']
             }
 
-    except httpx.HTTPError as e:
-        print(f"❌ HTTP xatolik: {e}")
     except Exception as e:
-        print(f"❌ Umumiy xatolik: {e}")
+        print(f"❌ Audio yuborishda xatolik: {e}")
+    return None
 
-    return None  # 🎯 Timeout yoki xatolik bo‘lsa None qaytadi
-async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int = 15) -> dict | None:
+# 🎯 Asosiy funksiya
+async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int = 60) -> dict | None:
     userbot = await get_random_active_userbot()
 
     client = TelegramClient(
@@ -83,6 +83,39 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int
                         print("🔘 Tugma bosildi")
                         return
 
+    async def process_audio_event(event):
+        nonlocal file_id, message_id, audio_path, file_name
+
+        if audio_ready.is_set():
+            return  # ✅ Allaqachon audio yuborilgan
+
+        file = event.audio or event.document
+        if not file:
+            return
+
+        if file.size < 100 * 1024:
+            print("⚠️ Demo yoki kichik fayl — e'tiborsiz")
+            return
+
+        try:
+            safe_name = (file_name or f"audio_{chat_id}_{event.id}").replace(" ", "_") + ".mp3"
+            audio_path = os.path.join(TEMP_DIR, safe_name)
+
+            await client.download_media(file, audio_path)
+            print(f"💾 Yuklandi: {audio_path}")
+
+            result = await send_audio_to_chat(audio_path, chat_id, bot_token, caption=prompt)
+            if result:
+                file_id = result['file_id']
+                message_id = result['message_id']
+                print("✅ Telegramga yuborildi")
+                audio_ready.set()
+                await cleanup()
+        except Exception as e:
+            print(f"❌ Audio qayta ishlashda xatolik: {e}")
+            audio_ready.set()
+            await cleanup()
+
     @client.on(events.NewMessage(from_users=bot_username))
     async def handle_audio(event):
         await process_audio_event(event)
@@ -91,50 +124,11 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int
     async def handle_audio_edit(event):
         await process_audio_event(event)
 
-    async def process_audio_event(event):
-        nonlocal file_id, message_id, audio_path, file_name
-        file = event.audio or event.document
-        if not file:
-            return
-
-        print("🎧 Audio kelmoqda...")
-
-        if file.size < 100 * 1024:
-            print("⚠️ Juda kichik fayl (demo?) — bekor qilindi.")
-            await cleanup()
-            audio_ready.set()
-            return
-
-        try:
-            safe_name = (file_name or f"audio_{chat_id}").replace(" ", "_") + ".mp3"
-            audio_path = os.path.join("/tmp", safe_name)
-
-            await client.download_media(file, audio_path)
-            print(f"💾 Yuklandi: {audio_path}")
-
-            result = await send_audio_to_chat(audio_path, chat_id, bot_token, caption=prompt)
-            if result is None:
-                print("❌ Audio yuborishda xatolik timeout")
-                await cleanup()
-                audio_ready.set()
-                return
-
-            file_id = result['file_id']
-            message_id = result['message_id']
-            print("✅ Telegramga yuborildi")
-
-        except Exception as e:
-            print(f"❌ Audio yuborishda xatolik: {e}")
-        finally:
-            audio_ready.set()
-            await cleanup()
-
-
     try:
         await client.start()
         print("🚀 Userbot ishga tushdi")
         await client.send_message(bot_username, prompt)
-        print(f"📩 '{prompt}' yuborildi")
+        print(f"📩 Prompt yuborildi: {prompt}")
 
         await asyncio.wait_for(audio_ready.wait(), timeout=timeout)
 
@@ -145,12 +139,8 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int
         print(f"❌ Umumiy xatolik: {e}")
         await cleanup()
 
-    # Doim yakunida None yoki dict qaytariladi
-    if file_id and message_id and file_name:
-        return {
-            "file_id": file_id,
-            "message_id": message_id,
-            "file_name": file_name
-        }
-    else:
-        return None
+    return {
+        "file_id": file_id,
+        "message_id": message_id,
+        "file_name": file_name
+    } if file_id and message_id and file_name else None
