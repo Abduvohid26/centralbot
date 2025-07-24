@@ -187,11 +187,17 @@ from api.routes.get_music_data import get_music_data
 async def muz_router(prompt: str, bot_token: str, chat_id: int):
     try:
         file_id = await get_music_data(prompt, bot_token, chat_id)  # 🔁 Endi file_id olish mumkin
-        return {
-            "message": f"🎵 '{prompt}' yuborildi!",
-            "success": True,
-            "data": file_id
-        }
+        if file_id is not None:
+            return {
+                "message": f"🎵 '{prompt}' yuborildi!",
+                "success": True,
+                "data": file_id
+            }
+        else:
+            return {
+                "message": f"🎵 '{prompt}' yuborilmadi!",
+                "success": False
+            }
     except Exception as e:
         return {
             "message": f"Xatolik ({prompt}): {e}",
