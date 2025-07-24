@@ -15,107 +15,102 @@ import os
 
 import httpx
 
-
 async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict:
     url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
     async with httpx.AsyncClient() as client:
         with open(file_path, 'rb') as audio_file:
-            files = {'audio': (file_path, audio_file)}
+            files = {'audio': (os.path.basename(file_path), audio_file, 'audio/mpeg')}
             data = {'chat_id': chat_id, 'caption': caption}
             response = await client.post(url, data=data, files=files)
             response.raise_for_status()
             result = response.json()
             print(result, "✅ Telegram javobi")
-            file_id = result['result']['audio']['file_id']
-            message_id = result['result']['message_id']
             return {
-                "file_id": file_id,
-                "message_id": message_id
+                "file_id": result['result']['audio']['file_id'],
+                "message_id": result['result']['message_id']
             }
-from bot.utils.database.functions.f_userbot import  get_random_active_userbot
-from telethon.sessions import StringSession
-import asyncio
+
 
 async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | None:
-
     userbot = await get_random_active_userbot()
-    
+
     client = TelegramClient(
         StringSession(userbot.session_string),
-        userbot.app.api_id, userbot.app.api_hash
-        )
+        userbot.app.api_id,
+        userbot.app.api_hash
+    )
 
-    audio_received = False
-    button_clicked = False
     file_id = None
     message_id = None
     file_name = None
+    audio_downloaded = asyncio.Event()
+    audio_file_path = None
+
+    async def cleanup():
+        if audio_file_path and os.path.exists(audio_file_path):
+            os.remove(audio_file_path)
+            print("🧹 Fayl tozalandi.")
+        await client.disconnect()
+        print("🔌 Client uzildi.")
 
     @client.on(events.NewMessage(from_users=bot_username))
     async def handle_buttons(event):
-        nonlocal button_clicked, file_name
-        if button_clicked:
-            return
-
+        nonlocal file_name
         if event.buttons:
             for row in event.buttons:
                 for button in row:
                     if "•" in button.text or ":" in button.text:
-                        file_name = button.text.strip() 
+                        file_name = button.text.strip()
                         print(f"🎵 Tugma topildi: {file_name}")
                         await event.click(text=button.text)
                         print("🔘 Tugma bosildi")
-                        button_clicked = True
                         return
 
     @client.on(events.NewMessage(from_users=bot_username))
     async def handle_audio(event):
-        await asyncio.sleep(5)
-        nonlocal audio_received, file_id, message_id
-        if audio_received:
-            return
-
+        nonlocal file_id, message_id, file_name, audio_file_path
         if event.audio or event.document:
-            audio_received = True
             file = event.audio or event.document
-            print("🎧 Audio topildi, yuklanmoqda...")
+            print("🎧 Audio qabul qilindi, yuklanmoqda...")
 
-            # Fayl hajmi tekshiruv (masalan: 5 sekundli demo mp3)
-            if file.size and file.size < 100 * 1024:  # 100KB dan kichik faylni tashlab yuboramiz
-                print("⚠️ Fayl juda kichik, ehtimol 5 sekundli demo. Tashlab yuborildi.")
-                await client.disconnect()
+            if file.size < 100 * 1024:
+                print("⚠️ Fayl juda kichik, ehtimol demo. Bekor qilindi.")
+                await cleanup()
                 return
 
+            if not file_name:
+                file_name = f"track_{chat_id}.mp3"
+
+            audio_file_path = os.path.join("/tmp", file_name.replace(" ", "_") + ".mp3")
+            await client.download_media(file, audio_file_path)
+            print(f"💾 Yuklandi: {audio_file_path}")
+
             try:
-                file_path = f"{file_name.split('•')[-1]}" + ".mp3"
-                await client.download_media(file, file_path)
-                print(f"💾 Yuklandi: {file_path}")
-
-                result = await send_audio_to_chat(
-                    file_path=file_path,
-                    chat_id=chat_id,
-                    bot_token=bot_token,
-                    caption=prompt
-                )
-
+                result = await send_audio_to_chat(audio_file_path, chat_id, bot_token, caption=prompt)
                 file_id = result["file_id"]
                 message_id = result["message_id"]
-
                 print(f"📤 Yuborildi. file_id: {file_id}")
-                print("🧹 Fayl o‘chirildi.")
             except Exception as e:
-                print(f"❌ Xatolik: {e}")
+                print(f"❌ Yuborishda xatolik: {e}")
             finally:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                await client.disconnect()
+                audio_downloaded.set()
+                await cleanup()
 
+    try:
+        await client.start()
+        print("🚀 Userbot ishga tushdi.")
+        await client.send_message(bot_username, prompt)
+        print(f"📩 '{prompt}' so‘rovi yuborildi")
 
-    await client.start()
-    print("🚀 Client ishga tushdi")
-    await client.send_message(bot_username, prompt)
-    print(f"📩 '{prompt}' botga yuborildi")
-    await client.run_until_disconnected()
+        try:
+            await asyncio.wait_for(audio_downloaded.wait(), timeout=60)  # max 60s kutish
+        except asyncio.TimeoutError:
+            print("⏰ Timeout! Audio kelmadi.")
+            await cleanup()
+
+    except Exception as e:
+        print(f"❌ Umumiy xatolik: {e}")
+        await cleanup()
 
     if file_id and message_id and file_name:
         return {
@@ -123,4 +118,5 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
             "message_id": message_id,
             "file_name": file_name
         }
+
     return None
