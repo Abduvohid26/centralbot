@@ -20,7 +20,7 @@ TEMP_DIR = "/tmp"
 
 async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict | None:
     url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
-    timeout = httpx.Timeout(connect=5.0, read=60.0, write=60.0, pool=5.0)
+    timeout = httpx.Timeout(connect=5.0, read=30.0, write=30.0, pool=5.0)
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
