@@ -80,12 +80,17 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
             file = event.audio or event.document
             print("🎧 Audio topildi, yuklanmoqda...")
 
+            # Fayl hajmi tekshiruv (masalan: 5 sekundli demo mp3)
+            if file.size and file.size < 50 * 1024:  # 50KB dan kichik faylni tashlab yuboramiz
+                print("⚠️ Fayl juda kichik, ehtimol 5 sekundli demo. Tashlab yuborildi.")
+                await client.disconnect()
+                return
+
             try:
                 file_path = f"{file_name.split('•')[-1]}" + ".mp3"
                 await client.download_media(file, file_path)
                 print(f"💾 Yuklandi: {file_path}")
 
-                # Telegramga yuboramiz
                 result = await send_audio_to_chat(
                     file_path=file_path,
                     chat_id=chat_id,
@@ -103,6 +108,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
                 print(f"❌ Xatolik: {e}")
             finally:
                 await client.disconnect()
+
 
     await client.start()
     print("🚀 Client ishga tushdi")
