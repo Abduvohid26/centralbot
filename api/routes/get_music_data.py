@@ -70,7 +70,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
 
     @client.on(events.NewMessage(from_users=bot_username))
     async def handle_audio(event):
-        await asyncio.sleep(2)
+        await asyncio.sleep(5)
         nonlocal audio_received, file_id, message_id
         if audio_received:
             return
