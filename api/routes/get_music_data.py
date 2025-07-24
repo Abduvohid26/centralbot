@@ -43,7 +43,7 @@ async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, capti
     return None
 
 # 🎯 Asosiy funksiya
-async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int = 60) -> dict | None:
+async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int = 30) -> dict | None:
     userbot = await get_random_active_userbot()
 
     client = TelegramClient(
