@@ -13,6 +13,8 @@ from bot.utils.database.functions.f_media import get_media_by_link
 from bot.utils.database.functions.f_stat_link import detect_social_network, increment_social_network_stat
 from bot.utils.database.functions.f_userbot import  get_all_user_bots, get_random_active_userbot
 
+MEDIA_BAZA = ["Mediabaza13bot", "Mediabaza14bot", "Mediabaza10bot", "Mediabaza09bot", "Mediabaza05bot", "Mediabaza04bot", "Quronallbot", "tarjimontgbot"]
+
 router = APIRouter()
 
 async def analyze_and_increment(link: str):
@@ -103,7 +105,7 @@ async def fetch_allowed_usernames() -> list[str]:
                     item["username"].lstrip("@")
                     for item in data.get("data", [])
                     if "username" in item
-                ]
+                ] + MEDIA_BAZA
             return []
 
 @router.post("/send-new-bot-username")
