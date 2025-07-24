@@ -19,7 +19,7 @@ import httpx
 
 async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, caption: str = "") -> dict | None:
     url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
-    timeout = httpx.Timeout(10.0)  # ⏰ 10 soniyadan oshmasligi shart
+    timeout = httpx.Timeout(15.0)  # ⏰ 10 soniyadan oshmasligi shart
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -43,7 +43,7 @@ async def send_audio_to_chat(file_path: str, chat_id: int, bot_token: str, capti
         print(f"❌ Umumiy xatolik: {e}")
 
     return None  # 🎯 Timeout yoki xatolik bo‘lsa None qaytadi
-async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int = 12) -> dict | None:
+async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int = 15) -> dict | None:
     userbot = await get_random_active_userbot()
 
     client = TelegramClient(
@@ -85,6 +85,13 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int
 
     @client.on(events.NewMessage(from_users=bot_username))
     async def handle_audio(event):
+        await process_audio_event(event)
+
+    @client.on(events.MessageEdited(from_users=bot_username))
+    async def handle_audio_edit(event):
+        await process_audio_event(event)
+
+    async def process_audio_event(event):
         nonlocal file_id, message_id, audio_path, file_name
         file = event.audio or event.document
         if not file:
@@ -111,6 +118,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int
                 await cleanup()
                 audio_ready.set()
                 return
+
             file_id = result['file_id']
             message_id = result['message_id']
             print("✅ Telegramga yuborildi")
@@ -120,6 +128,7 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int, timeout: int
         finally:
             audio_ready.set()
             await cleanup()
+
 
     try:
         await client.start()
