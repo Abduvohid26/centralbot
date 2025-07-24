@@ -102,12 +102,12 @@ async def get_music_data(prompt: str, bot_token: str, chat_id: int) -> dict | No
                 message_id = result["message_id"]
 
                 print(f"📤 Yuborildi. file_id: {file_id}")
-                os.remove(file_path)
                 print("🧹 Fayl o‘chirildi.")
             except Exception as e:
                 print(f"❌ Xatolik: {e}")
             finally:
-                os.remove(file_path)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
                 await client.disconnect()
 
 
