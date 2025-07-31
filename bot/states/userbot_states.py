@@ -5,3 +5,10 @@ class AddUserBotFSM(StatesGroup):
     phone = State()
     code = State()
     password = State()
+
+
+class AddUserBotFSMExtra(StatesGroup):
+    choose_app = State()
+    phone = State()
+    code = State()
+    password = State()

@@ -20,7 +20,6 @@ router = Router()
 async def open_userbot_menu(call: types.CallbackQuery):
     bots = await get_all_user_bots()
     text, keyboard = inline_userbot_list_keyboard(bots, page=1)
-
     await call.message.edit_text(text, reply_markup=keyboard)
 
 # 1. Boshlash - app tanlash

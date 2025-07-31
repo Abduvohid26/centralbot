@@ -124,3 +124,28 @@ class DB_bots(Base):
     __tablename__ = "db_bots"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     username = Column(String(255), nullable=False)
+
+
+
+
+class TelegramAppExtra(Base):
+    __tablename__ = "telegram_apps_extra"
+
+    id = Column(BigInteger, primary_key=True)
+    name = Column(String, nullable=False)
+    api_id = Column(BigInteger, nullable=False)
+    api_hash = Column(String, nullable=False)
+
+    user_bots = relationship("UserBotExtra", back_populates="app")
+
+
+class UserBotExtra(Base):
+    __tablename__ = "user_bots_extra"
+
+    id = Column(Integer, primary_key=True)
+    phone_number = Column(String, unique=True, nullable=False)
+    session_string = Column(String, nullable=False)
+    telegram_user_id = Column(BigInteger, nullable=False)
+    app_id = Column(BigInteger, ForeignKey("telegram_apps_extra.id"))
+    app = relationship("TelegramAppExtra", back_populates="user_bots")
+    is_active = Column(Boolean, default=True)

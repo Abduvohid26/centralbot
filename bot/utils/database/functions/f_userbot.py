@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
-from bot.utils.database.models import engine, UserBot
+from bot.utils.database.models import engine, UserBot, UserBotExtra
 from sqlalchemy import select, func
 
 # ✅ 1. UserBot yaratish
@@ -31,8 +31,39 @@ async def save_user_bot_to_db(
                 await session.rollback()
                 print(f"❌ Xatolik: {e}")
                 raise e
+            
+
+async def save_user_bot_to_db_extra(
+    phone: str,
+    session_string: str,
+    telegram_user_id: int,
+    telegram_app_id: int
+) -> UserBotExtra:
+    async with AsyncSession(engine) as session:
+        async with session.begin():
+            try:
+                bot = UserBotExtra(
+                    phone_number=phone,
+                    session_string=session_string,
+                    telegram_user_id=telegram_user_id,
+                    app_id=telegram_app_id
+                )
+                session.add(bot)
+                await session.flush()
+                await session.refresh(bot)
+                return bot
+            except SQLAlchemyError as e:
+                await session.rollback()
+                print(f"❌ Xatolik: {e}")
+                raise e
+
 # ✅ 2. Barcha UserBotlar
 async def get_all_userbots() -> list[UserBot]:
+    async with AsyncSession(engine) as session:
+        result = await session.execute(select(UserBot))
+        return result.scalars().all()
+    
+async def get_all_userbots_extra() -> list[UserBot]:
     async with AsyncSession(engine) as session:
         result = await session.execute(select(UserBot))
         return result.scalars().all()
@@ -98,6 +129,27 @@ async def delete_userbot_by_id(bot_id: int) -> bool:
             print(f"❌ delete_userbot_by_id error: {e}")
             return False
 
+
+async def delete_userbot_by_id_extra(bot_id: int) -> bool:
+    async with AsyncSession(engine) as session:
+        try:
+            # Bot mavjudligini tekshirish
+            result = await session.execute(
+                select(UserBotExtra).where(UserBotExtra.id == bot_id)
+            )
+            bot = result.scalar_one_or_none()
+
+            if not bot:
+                return False
+
+            await session.delete(bot)
+            await session.commit()
+            return True
+        except Exception as e:
+            await session.rollback()
+            print(f"❌ delete_userbot_by_id error: {e}")
+            return False
+
 async def get_random_active_userbot() -> UserBot | None:
     async with AsyncSession(engine) as session:
         try:
@@ -113,6 +165,25 @@ async def get_random_active_userbot() -> UserBot | None:
             await session.rollback()
             print(f"❌ get_random_active_userbot error: {e}")
             return None
+        
+
+async def get_random_active_userbot_exta() ->   UserBotExtra | None:
+    async with AsyncSession(engine) as session:
+        try:
+            result = await session.execute(
+                select(UserBotExtra)
+                .options(joinedload(UserBotExtra.app))
+                .where(UserBotExtra.is_active == True)
+                .order_by(func.random())
+                .limit(1)
+            )
+            return result.scalar_one_or_none()
+        except Exception as e:
+            await session.rollback()
+            print(f"❌ get_random_active_userbot error: {e}")
+            return None
+        
+
 async def get_userbot_by_telegram_id(telegram_user_id: int) -> UserBot | None:
     async with AsyncSession(engine) as session:
         try:
@@ -135,6 +206,20 @@ async def get_all_user_bots() -> list[UserBot]:
                 select(UserBot)
                 .options(joinedload(UserBot.app))  # 🔥 bu yerda App bilan birga yuklanadi
                 .where(UserBot.is_active == True)
+            )
+            return list(result.scalars().all())
+        except Exception as e:
+            await session.rollback()
+            print(f"❌ get_all_user_bots error: {e}")
+            return []
+        
+async def get_all_user_bots_extra() -> list[UserBotExtra]:
+    async with AsyncSession(engine) as session:
+        try:
+            result = await session.execute(
+                select(UserBotExtra)
+                .options(joinedload(UserBotExtra.app))  # 🔥 bu yerda App bilan birga yuklanadi
+                .where(UserBotExtra.is_active == True)
             )
             return list(result.scalars().all())
         except Exception as e:

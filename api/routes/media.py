@@ -25,6 +25,7 @@ async def analyze_and_increment(link: str):
 async def check_media(data: MediaRequest):
     platform = await extract_platform_from_link(data.external_link)
     queue = userbot_queues.get(int(data.userbot_id))
+    print("queue:", queue)
     if platform == 'youtube':
         media = await get_media_by_link(platform)
     else:

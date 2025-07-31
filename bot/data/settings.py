@@ -2,7 +2,6 @@ from sqlalchemy import select
 from bot.data.config import OWNER_ID
 from bot.utils.database.models import async_session
 from bot.utils.database.models import User
-print("999999999999")
 
 async def load_settings():
     async with async_session() as session:
