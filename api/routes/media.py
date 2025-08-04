@@ -67,9 +67,9 @@ async def external_media(data: ExternalOnlyRequest):
         await bot.send_video(
             chat_id=userbot.telegram_user_id,
             video=file_id,
-            caption=data.external_link,
+            caption=f"{data.external_link} media26",
         )
-        return {"status": True, "message": "✅ Video yuborildi"}
+        return {"status": True, "message": f"✅ Video yuborildi"}
 
     # 2️⃣ Agar bu botga tegishli bo‘lmasa, asl bot_token orqali yuboramiz
     except TelegramAPIError as e:
@@ -80,7 +80,7 @@ async def external_media(data: ExternalOnlyRequest):
             await temp_bot.send_video(
                 chat_id=userbot.telegram_user_id,
                 video=file_id,
-                caption=data.external_link,
+                caption=f"{data.external_link} media26",
             )
             await temp_bot.session.close()
             return {"status": True, "message": "✅ Asl bot orqali video yuborildi (fallback)"}
