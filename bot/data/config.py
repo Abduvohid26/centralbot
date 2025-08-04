@@ -26,7 +26,7 @@ CHECK_MEDIA_URL = f"{BASE_API_URL}/api/check-media/"  # <- to‘g‘ri nomlash
 userbot_queues = {}
 user_links = {}
 ALLOWED_BOTS_API_URL = "http://84.32.188.155:8080/all/bot/username"
-# ALLOWED_BOTS_API_URL = "http://84.32.59.4:9050/all/bot/username"
+# ALLOWED_BOTS_API_URL = "https://a845c746fb09.ngrok-free.app/all/bot/username"
 def toshkent_now() -> datetime:
     return datetime.now(pytz.timezone("Asia/Tashkent")).replace(tzinfo=None)
 

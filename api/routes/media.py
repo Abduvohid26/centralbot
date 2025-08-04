@@ -12,9 +12,8 @@ from bot.utils.database.functions.f_dbbot import get_random_bot_username
 from bot.utils.database.functions.f_media import get_media_by_link
 from bot.utils.database.functions.f_stat_link import detect_social_network, increment_social_network_stat
 from bot.utils.database.functions.f_userbot import  get_all_user_bots, get_random_active_userbot
-
 MEDIA_BAZA = ["Mediabaza13bot", "Mediabaza14bot", "Mediabaza10bot", "Mediabaza09bot", "Mediabaza05bot", "Mediabaza04bot", "Quronallbot", "tarjimontgbot"]
-
+# MEDIA_BAZA = ["ilxa26_bot", "Abduvohid25_bot"]
 router = APIRouter()
 
 async def analyze_and_increment(link: str):
@@ -25,7 +24,6 @@ async def analyze_and_increment(link: str):
 async def check_media(data: MediaRequest):
     platform = await extract_platform_from_link(data.external_link)
     queue = userbot_queues.get(int(data.userbot_id))
-    print("queue:", queue)
     if platform == 'youtube':
         media = await get_media_by_link(platform)
     else:
@@ -39,13 +37,16 @@ async def check_media(data: MediaRequest):
         "external_bot_username": data.external_bot_username,
         "is_media": is_media
     })
+    print({"status": True, "message": "UserBot o'z ishini bajarishga tushdi✅"})
     return {"status": True, "message": "UserBot o'z ishini bajarishga tushdi✅"}
 
 @router.post("/send-external-media")
 async def external_media(data: ExternalOnlyRequest):
+    print("Salom")
     # platform = await extract_platform_from_link(data.link)
     media = await get_media_by_link(data.external_link)
     if not media:
+        print("121221")
         return {"status": False}
     await analyze_and_increment(data.external_link)
     file_id = media.file_id
@@ -53,6 +54,7 @@ async def external_media(data: ExternalOnlyRequest):
     userbot = await get_random_active_userbot()
     queue = userbot_queues.get(userbot.telegram_user_id)
     if not queue:
+        print("hi")
         raise HTTPException(status_code=404, detail="UserBot mavjud emas yoki hali ishga tushmagan")
     await queue.put({
         "external_link": data.external_link,
@@ -98,6 +100,7 @@ async def get_random_active_userbots():
     }
 
 async def fetch_allowed_usernames() -> list[str]:
+    # return MEDIA_BAZA
     async with aiohttp.ClientSession() as session:
         async with session.get(ALLOWED_BOTS_API_URL) as resp:
             if resp.status == 200:
