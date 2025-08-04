@@ -12,8 +12,8 @@ from bot.utils.database.functions.f_dbbot import get_random_bot_username
 from bot.utils.database.functions.f_media import get_media_by_link
 from bot.utils.database.functions.f_stat_link import detect_social_network, increment_social_network_stat
 from bot.utils.database.functions.f_userbot import  get_all_user_bots, get_random_active_userbot
-MEDIA_BAZA = ["Mediabaza13bot", "Mediabaza14bot", "Mediabaza10bot", "Mediabaza09bot", "Mediabaza05bot", "Mediabaza04bot", "Quronallbot", "tarjimontgbot"]
-# MEDIA_BAZA = ["ilxa26_bot", "Abduvohid25_bot"]
+# MEDIA_BAZA = ["Mediabaza13bot", "Mediabaza14bot", "Mediabaza10bot", "Mediabaza09bot", "Mediabaza05bot", "Mediabaza04bot", "Quronallbot", "tarjimontgbot"]
+MEDIA_BAZA = ["ilxa26_bot", "Abduvohid25_bot"]
 router = APIRouter()
 
 async def analyze_and_increment(link: str):
@@ -100,17 +100,17 @@ async def get_random_active_userbots():
     }
 
 async def fetch_allowed_usernames() -> list[str]:
-    # return MEDIA_BAZA
-    async with aiohttp.ClientSession() as session:
-        async with session.get(ALLOWED_BOTS_API_URL) as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                return [
-                    item["username"].lstrip("@")
-                    for item in data.get("data", [])
-                    if "username" in item
-                ] + MEDIA_BAZA
-            return []
+    return MEDIA_BAZA
+    # async with aiohttp.ClientSession() as session:
+    #     async with session.get(ALLOWED_BOTS_API_URL) as resp:
+    #         if resp.status == 200:
+    #             data = await resp.json()
+    #             return [
+    #                 item["username"].lstrip("@")
+    #                 for item in data.get("data", [])
+    #                 if "username" in item
+    #             ] + MEDIA_BAZA
+    #         return []
 
 @router.post("/send-new-bot-username")
 async def add_allowed_bot(data: BotUsername):
@@ -209,3 +209,68 @@ async def muz_router(prompt: str, bot_token: str, chat_id: int):
             "message": f"Xatolik ({prompt}): {e}",
             "success": False
         }
+from telethon import events
+import asyncio
+
+
+async def start_audio_forwarding(track_id: str, target_bot_username: str):
+    media = await get_media_by_link(track_id)
+    if not media:
+        return {"success": False, "message": "Media topilmadi"}
+
+    userbot = await get_random_active_userbot()
+    if not userbot:
+        return {"success": False, "message": "Userbot topilmadi"}
+
+    client = TelegramClient(
+        StringSession(userbot.session_string),
+        userbot.app.api_id,
+        userbot.app.api_hash
+    )
+
+    # 📌 Future yaratamiz natijani kutish uchun
+    result_future = asyncio.Future()
+
+    @client.on(events.NewMessage(incoming=True))
+    async def handle_audio(event):
+        if event.message.audio and "media26" in (event.message.message or "") and target_bot_username in event.message.message:
+            try:
+                await client.send_file(
+                    entity=f"@{target_bot_username}",
+                    file=event.message.audio,
+                    caption="✅ Userbot orqali yuborildi"
+                )
+                if not result_future.done():
+                    result_future.set_result({"success": True, "message": "Userbot orqali yuborildi"})
+            except Exception as e:
+                if not result_future.done():
+                    result_future.set_result({"success": False, "message": f"Yuborishda xatolik: {e}"})
+
+    await client.start()
+
+    # Main bot orqali userbotga yuborish
+    try:
+        tempbot = Bot(token=media.bot_token)
+        await tempbot.send_audio(
+            chat_id=userbot.telegram_user_id,
+            audio=media.file_id,
+            caption=f"{media.link} media26 {target_bot_username}"
+        )
+    except Exception as e:
+        await client.disconnect()
+        return {"success": False, "message": f"Bot yuborishda xatolik: {e}"}
+
+    # Userbotdan natijani kutish
+    try:
+        result = await asyncio.wait_for(result_future, timeout=5)
+    except asyncio.TimeoutError:
+        result = {"success": False, "message": "⏱ Userbotdan javob kelmadi (timeout)"}
+    finally:
+        await client.disconnect()
+
+    return result
+
+
+@router.get("/new-api-send")
+async def new_api_send(track_id: str, bot_username: str):
+    return await start_audio_forwarding(track_id, bot_username)
