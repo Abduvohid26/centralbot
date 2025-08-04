@@ -283,12 +283,11 @@ from aiogram import Bot
 import aiohttp
 from io import BytesIO
 
-# Asosiy endpoint
 @router.get("/new-api-send")
 async def new_api_send(track_id: str, bot_username: str):
     return await send_to_external_bot_via_userbot(track_id, bot_username)
 
-# Asosiy funksiya
+
 async def send_to_external_bot_via_userbot(track_id, bot_username):
     # 1. DB dan media olish
     media = await get_media_by_link(track_id)
@@ -306,17 +305,15 @@ async def send_to_external_bot_via_userbot(track_id, bot_username):
         userbot.app.api_id,
         userbot.app.api_hash
     )
-
     await client.start()
 
     # 4. Audio faylni URL orqali olish
     base_bot = Bot(token=media.bot_token)
-    async with base_bot:
-        file = await base_bot.get_file(media.file_id)
-        file_path = file.file_path
-        file_url = f"https://api.telegram.org/file/bot{media.bot_token}/{file_path}"
+    file = await base_bot.get_file(media.file_id)
+    file_path = file.file_path
+    file_url = f"https://api.telegram.org/file/bot{media.bot_token}/{file_path}"
 
-    # 5. Faylni yuklab olish va RAMga yozish (diskga emas!)
+    # 5. Faylni yuklab olish va RAMga yozish (disk emas)
     async with aiohttp.ClientSession() as session:
         async with session.get(file_url) as resp:
             if resp.status != 200:
@@ -324,9 +321,9 @@ async def send_to_external_bot_via_userbot(track_id, bot_username):
                 return {"success": False, "message": "File download failed"}
             audio_bytes = await resp.read()
 
-    # 6. BytesIO (xotirada fayl obyekti)
+    # 6. BytesIO obyekti (RAM ichida fayl)
     file_obj = BytesIO(audio_bytes)
-    file_obj.name = "audio.mp3"  # Fayl nomi berilishi kerak
+    file_obj.name = "audio.mp3"  # kerakli fayl nomi
 
     # 7. Userbot orqali tashqi botga yuborish
     try:
