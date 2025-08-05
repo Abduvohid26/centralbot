@@ -12,8 +12,8 @@ from bot.utils.database.functions.f_dbbot import get_random_bot_username
 from bot.utils.database.functions.f_media import get_media_by_link
 from bot.utils.database.functions.f_stat_link import detect_social_network, increment_social_network_stat
 from bot.utils.database.functions.f_userbot import  get_all_user_bots, get_random_active_userbot
-# MEDIA_BAZA = ["Mediabaza13bot", "Mediabaza14bot", "Mediabaza10bot", "Mediabaza09bot", "Mediabaza05bot", "Mediabaza04bot", "Quronallbot", "tarjimontgbot"]
-MEDIA_BAZA = ["ilxa26_bot", "Abduvohid25_bot"]
+MEDIA_BAZA = ["Mediabaza13bot", "Mediabaza14bot", "Mediabaza10bot", "Mediabaza09bot", "Mediabaza05bot", "Mediabaza04bot", "Quronallbot", "tarjimontgbot"]
+# MEDIA_BAZA = ["ilxa26_bot", "Abduvohid25_bot"]
 router = APIRouter()
 
 async def analyze_and_increment(link: str):
@@ -100,17 +100,17 @@ async def get_random_active_userbots():
     }
 
 async def fetch_allowed_usernames() -> list[str]:
-    return MEDIA_BAZA
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.get(ALLOWED_BOTS_API_URL) as resp:
-    #         if resp.status == 200:
-    #             data = await resp.json()
-    #             return [
-    #                 item["username"].lstrip("@")
-    #                 for item in data.get("data", [])
-    #                 if "username" in item
-    #             ] + MEDIA_BAZA
-    #         return []
+    # return MEDIA_BAZA
+    async with aiohttp.ClientSession() as session:
+        async with session.get(ALLOWED_BOTS_API_URL) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return [
+                    item["username"].lstrip("@")
+                    for item in data.get("data", [])
+                    if "username" in item
+                ] + MEDIA_BAZA
+            return []
 
 @router.post("/send-new-bot-username")
 async def add_allowed_bot(data: BotUsername):
